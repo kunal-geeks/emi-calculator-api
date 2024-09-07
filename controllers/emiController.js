@@ -1,27 +1,87 @@
 const emiService = require('../services/emiService');
+const { z } = require('zod');
 
+// Zod schema for validating EMI calculation inputs
+const calculateEMISchema = z.object({
+  loanAmount: z.number().positive(),
+  interestRate: z.number().positive(),
+  loanTenureMonths: z.number().int().positive(),
+  prepaymentAmount: z.number().positive().optional().nullable(),
+});
+
+// Zod schema for validating loan ID
+const loanIdSchema = z.string().uuid();
+
+/**
+ * Controller for EMI calculation.
+ * 
+ * @param {object} req - Express request object.
+ * @param {object} res - Express response object.
+ * @param {function} next - Express middleware function.
+ * @returns {object} JSON response with EMI and loan details.
+ */
 async function calculateEMI(req, res, next) {
   try {
-    const loan = await emiService.calculateAndSaveEMI(req.body);
-    res.json(loan);
+    // Validate input using Zod schema
+    const parsedData = calculateEMISchema.safeParse(req.body);
+    if (!parsedData.success) {
+      return res.status(400).json({ 
+        message: 'Invalid input data', 
+        errors: parsedData.error.issues 
+      });
+    }
+
+    // Call service function to handle the business logic
+    const loan = await emiService.calculateAndSaveEMI(parsedData.data);
+    return res.status(201).json(loan);
   } catch (err) {
     next(err);
   }
 }
 
+/**
+ * Controller to fetch all loans.
+ * 
+ * @param {object} req - Express request object.
+ * @param {object} res - Express response object.
+ * @param {function} next - Express middleware function.
+ * @returns {object} JSON response with all loans.
+ */
 async function getAllLoans(req, res, next) {
   try {
     const loans = await emiService.getAllLoans();
-    res.json(loans);
+    return res.status(200).json(loans);
   } catch (err) {
     next(err);
   }
 }
 
+/**
+ * Controller to fetch a loan by ID.
+ * 
+ * @param {object} req - Express request object.
+ * @param {object} res - Express response object.
+ * @param {function} next - Express middleware function.
+ * @returns {object} JSON response with loan details.
+ */
 async function getLoanById(req, res, next) {
   try {
-    const loan = await emiService.getLoanById(req.params.id);
-    res.json(loan);
+    // Validate loan ID using Zod schema
+    const parsedId = loanIdSchema.safeParse(req.params.id);
+    if (!parsedId.success) {
+      return res.status(400).json({ 
+        message: 'Invalid loan ID', 
+        errors: parsedId.error.issues 
+      });
+    }
+
+    // Fetch the loan by ID using the service
+    const loan = await emiService.getLoanById(parsedId.data);
+    if (!loan) {
+      return res.status(404).json({ message: 'Loan not found' });
+    }
+
+    return res.status(200).json(loan);
   } catch (err) {
     next(err);
   }
