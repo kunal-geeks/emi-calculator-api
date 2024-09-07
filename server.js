@@ -16,5 +16,5 @@ app.use(errorHandler);
 
 // Sync database and start server
 sequelize.sync().then(() => {
-  app.listen(PORT, () => console.log('Server running on port ${PORT}'));
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 }).catch(err => console.error('Unable to connect to the database:', err));
