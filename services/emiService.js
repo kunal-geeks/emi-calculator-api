@@ -9,31 +9,54 @@ const { calculateEMI, recalculateWithPrepayment } = require('../helpers/emiCalcu
  */
 async function calculateAndSaveEMI(data) {
   try {
-    const { loan_amount, interest_rate, loan_tenure_months, prepayment_amount } = data;
 
-    // Calculate the monthly EMI
+    const loan_amount = parseFloat(data.loanAmount);
+    const interest_rate = parseFloat(data.interestRate);
+    const loan_tenure_months = parseInt(data.loanTenureMonths, 10);
+    const prepayment_amount = parseFloat(data.prepaymentAmount) || 0;
+
+    if (isNaN(loan_amount) || isNaN(interest_rate) || isNaN(loan_tenure_months)) {
+      throw new Error('Invalid input data');
+    }
+
+    if (loan_amount <= 0 || interest_rate <= 0 || loan_tenure_months < 1) {
+      throw new Error('Input data does not meet minimum requirements');
+    }
+
     const emi = calculateEMI(loan_amount, interest_rate, loan_tenure_months);
+    if (isNaN(emi)) {
+      throw new Error('Error calculating EMI');
+    }
+    
     let remaining_balance = loan_amount;
     const monthlyInterestRate = interest_rate / 12 / 100;
     const monthWisePayments = [];
+    let prepaymentThisMonth = prepayment_amount > 0 ? prepayment_amount : 0;
+    let rem_balance_after_first_month = remaining_balance - prepaymentThisMonth - emi;
 
-    // Handle prepayment if provided
-    let prepaymentThisMonth = 0;
-    if (prepayment_amount && prepayment_amount > 0) {
-      prepaymentThisMonth = prepayment_amount;
-      remaining_balance = recalculateWithPrepayment({ remaining_balance }, prepaymentThisMonth);
-    }
+    const loan = await emiRepository.saveLoan({
+      loan_amount: loan_amount.toFixed(2),
+      interest_rate: interest_rate.toFixed(2),
+      loan_tenure_months: loan_tenure_months, 
+      emi: emi.toFixed(2),
+      prepayment_amount: prepayment_amount > 0 ? prepayment_amount.toFixed(2) : null,
+      remaining_balance: rem_balance_after_first_month > 0 ? rem_balance_after_first_month.toFixed(2) : '0.00',
+    });
 
-    // Generate month-wise payment breakdown
-    for (let month = 1; month <= loan_tenure_months; month++) {
+    let month = 1;
+    while (remaining_balance > 0 && month <= loan_tenure_months) {
       const interestPaid = remaining_balance * monthlyInterestRate;
       const principalPaid = emi - interestPaid;
-
-      if (month === 1 && prepayment_amount && prepayment_amount > 0) {
-        remaining_balance = recalculateWithPrepayment({ remaining_balance }, prepayment_amount);
+   
+      if (isNaN(interestPaid) || isNaN(principalPaid)) {
+        throw new Error('Error calculating interest or principal paid');
       }
 
-      remaining_balance -= principalPaid;
+      if (month === 1 && prepaymentThisMonth > 0) {
+        remaining_balance = recalculateWithPrepayment(remaining_balance, prepaymentThisMonth);
+      }
+
+      remaining_balance -= emi;
 
       monthWisePayments.push({
         month,
@@ -44,29 +67,20 @@ async function calculateAndSaveEMI(data) {
         remainingBalance: remaining_balance > 0 ? remaining_balance.toFixed(2) : '0.00',
       });
 
-      // Stop if the loan is fully paid
-      if (remaining_balance <= 0) break;
+      if (remaining_balance <= 0) break; // Stop if loan fully paid
+      month++;
     }
 
-    // Save the loan details in the database
-    const loan = await emiRepository.saveLoan({
-      loan_amount,
-      interest_rate,
-      loan_tenure_months,
+    return {
+      loan_amount: loan_amount,
+      interest_rate: interest_rate,
+      loan_tenure_months: month - 1, // Updated tenure
       emi: emi.toFixed(2),
       prepayment_amount: prepayment_amount || 0,
-      remaining_balance: remaining_balance > 0 ? remaining_balance.toFixed(2) : '0.00',
-    });
-
-    return {
-      loanAmount: loan_amount,
-      interestRate: interest_rate,
-      loanTenureMonths: loan_tenure_months,
-      emi: emi.toFixed(2),
-      prepayment: prepayment_amount || 0,
-      monthWisePayments,
+      monthWisePayments: monthWisePayments,
     };
   } catch (error) {
+    console.error('Error in calculateAndSaveEMI:', error);
     throw new Error('Error calculating and saving EMI: ' + error.message);
   }
 }
@@ -91,15 +105,7 @@ async function getAllLoans() {
  * @returns {object|null} Loan data if found, otherwise null.
  */
 async function getLoanById(id) {
-  try {
-    const loan = await emiRepository.getLoanById(id);
-    if (!loan) {
-      throw new Error('Loan not found');
-    }
-    return loan;
-  } catch (error) {
-    throw new Error('Error retrieving loan by ID: ' + error.message);
-  }
+    return await emiRepository.getLoanById(id);
 }
 
 module.exports = { calculateAndSaveEMI, getAllLoans, getLoanById };

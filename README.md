@@ -36,9 +36,48 @@ DB_USER=<your_postgres_username>
 DB_PASSWORD=<your_postgres_password>
 DB_NAME=<your_postgres_database>
 PORT=3000
+NODE_ENV=production
 ```
 
 If you're using Aiven for PostgreSQL, replace the host, user, and password with the credentials from Aiven.
+you can set node env as production or development.
+
+```bash
+const { Sequelize } = require('sequelize');
+require('dotenv').config();
+
+const fs = require('fs');
+const path = require('path');
+
+const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASSWORD, {
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT || 5432,
+  dialect: 'postgres',
+  dialectOptions: {
+    ssl: {
+      ca: fs.readFileSync(path.resolve(__dirname, '..', 'ca.pem')) // Path to your CA certificate
+    }
+  },
+  logging: process.env.NODE_ENV === 'development' ? console.log : false, // Disable Sequelize logs in production
+});
+
+// Test connection and sync models
+(async () => {
+  try {
+    await sequelize.authenticate();
+    console.log('Connection to the postgres database has been established successfully.');
+    await sequelize.sync({ force: false }); // Sync models with the database
+  } catch (error) {
+    console.error('Unable to connect to the database:', error);
+  }
+})();
+
+module.exports = sequelize;
+```
+
+Also in the config/db.js file, replace the host, user, and password with the credentials from Aiven.
+on aiven console got to connect after starting postgres service and select node.js and then download ca.pem file.
+copy ca.pem file and paste it in the root directory.
 
 ### 4. Create PostgreSQL Table
 Run the SQL script provided in the sql/create_loans_table.sql file to create the necessary table in your database.
@@ -46,6 +85,7 @@ Run the SQL script provided in the sql/create_loans_table.sql file to create the
 ```bash
 psql -h <your_host> -U <your_username> -d <your_database> -f sql/create_loans_table.sql
 ```
+you can also use pgAdmin or any other tool to create the table.
 
 ### 5. Run the Server
 Start the application by running:

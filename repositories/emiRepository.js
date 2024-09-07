@@ -1,49 +1,28 @@
-const { Loan } = require('../models/Loan');
+const Loan = require('../models/Loan'); // Ensure the Loan model is imported
 
-/**
- * Save a new loan record in the database.
- * 
- * @param {object} data - The loan data to be saved.
- * @returns {Promise<object>} The created loan record.
- */
-async function saveLoan(data) {
+const emiRepository = {
+  async saveLoan(loanData) {
     try {
-        return await Loan.create(data);
+      const loan = await Loan.create(loanData); // Ensure Loan model is used properly
+      return loan;
     } catch (error) {
-        throw new Error(`Error saving loan: ${error.message}`);
+      console.error('Error saving loan:', error);
+      throw new Error('Error saving loan');
     }
-}
+  },
 
-/**
- * Retrieve all loan records from the database.
- * 
- * @returns {Promise<Array>} A list of all loan records.
- */
-async function getAllLoans() {
+  async getAllLoans() {
     try {
-        return await Loan.findAll();
+      return await Loan.findAll();
     } catch (error) {
-        throw new Error(`Error retrieving all loans: ${error.message}`);
+      console.error('Error retrieving loans:', error);
+      throw new Error('Error retrieving loans');
     }
-}
+  },
 
-/**
- * Retrieve a specific loan record by its ID.
- * 
- * @param {number|string} id - The ID of the loan to be retrieved.
- * @returns {Promise<object|null>} The loan record if found, otherwise null.
- */
-async function getLoanById(id) {
-    try {
-        const loan = await Loan.findByPk(id);
-        if (!loan) {
-            throw new Error('Loan not found');
-        }
-        return loan;
-    } catch (error) {
-        throw new Error(`Error retrieving loan by ID: ${error.message}`);
-    }
-}
+  async getLoanById(id) {
+      return await Loan.findByPk(id);
+  }
+};
 
-module.exports = { saveLoan, getAllLoans, getLoanById };
-
+module.exports = emiRepository; // Ensure emiRepository is properly exported
