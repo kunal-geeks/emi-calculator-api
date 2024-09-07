@@ -1,5 +1,5 @@
 const express = require('express');
-const emiRoutes = require('./routes/emiRoutes');
+const emiRoutes = require('./routes/v1/emiRoutes');
 const sequelize = require('./config/db');
 const errorHandler = require('./middlewares/errorHandler');
 
