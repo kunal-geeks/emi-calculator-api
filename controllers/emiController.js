@@ -3,14 +3,14 @@ const { z } = require('zod');
 
 // Zod schema for validating EMI calculation inputs
 const calculateEMISchema = z.object({
-  loanAmount: z.number().positive(),
-  interestRate: z.number().positive(),
-  loanTenureMonths: z.number().int().positive(),
-  prepaymentAmount: z.number().positive().optional().nullable(),
+  loanAmount: z.number().positive('Loan amount must be greater than 0'),
+  interestRate: z.number().positive('Interest rate must be greater than 0'),
+  loanTenureMonths: z.number().int().positive('Loan tenure must be a positive integer'),
+  prepaymentAmount: z.number().positive().optional().nullable().default(0) // Default to 0 if not provided
 });
 
 // Zod schema for validating loan ID
-const loanIdSchema = z.string().uuid();
+const loanIdSchema = z.string().uuid('Invalid loan ID format');
 
 /**
  * Controller for EMI calculation.

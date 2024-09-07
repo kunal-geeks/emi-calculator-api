@@ -1,5 +1,13 @@
 const config = require('../config');
 
+/**
+ * Error handling middleware.
+ * 
+ * @param {object} err - The error object.
+ * @param {object} req - Express request object.
+ * @param {object} res - Express response object.
+ * @param {function} next - Express middleware function.
+ */
 function errorHandler(err, req, res, next) {
     // Log the error details based on the log level from config
     if (config.logLevel === 'debug' || config.logLevel === 'error') {
