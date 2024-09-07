@@ -7,7 +7,7 @@ const app = express();
 app.use(express.json());
 
 // EMI Routes
-app.use('/api', emiRoutes);
+app.use('/api/v1', emiRoutes);
 
 // Error handling middleware
 app.use(errorHandler);
