@@ -1,6 +1,7 @@
 const express = require('express');
 const emiRoutes = require('./routes/v1/emiRoutes');
 const sequelize = require('./config/db');
+const config = require('./config');
 const errorHandler = require('./middlewares/errorHandler');
 require('dotenv').config();
 
