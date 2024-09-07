@@ -95,10 +95,10 @@ Response:
 }
 ```
 2. Fetch All EMI Records
-GET /api/emis
+GET /api/v1/emis
 
 3. Fetch EMI by ID
-GET /api/emi/:id
+GET /api/v1/emi/:id
 
 ### Testing
 Use Postman or Insomnia to test the API by sending HTTP requests.
