@@ -16,7 +16,7 @@ Before setting up the project, ensure you have the following installed:
 ### 1. Clone the repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/kunal-geeks/emi-calculator-api.git
 cd emi-calculator-api
 ```
 
@@ -40,7 +40,7 @@ NODE_ENV=production
 ```
 
 If you're using Aiven for PostgreSQL, replace the host, user, and password with the credentials from Aiven.
-you can set node env as production or development.
+you can set NODE_ENV as production or development.
 
 ```bash
 const { Sequelize } = require('sequelize');
